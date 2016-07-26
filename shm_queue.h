@@ -5,12 +5,12 @@
  *  Created on: 2016.7.10
  *  Author: WK <18402927708@163.com>
  *
- *  Based on transaction pool, features:
- *  1) support single writer but multiple reader processes/threads
- *  2) support timestamping for each data
- *  3) support auto detecting and skipping corrupted elements
- *  4) support variable user data size
- *  5) use highly optimized gettimeofday() to speedup sys time
+ *  Based on transaction pool, features:  基于事务池，特征
+ *  1) support single writer but multiple reader processes/threads    支持单写多读进程/线程 
+ *  2) support timestamping for each data       支持为每个数据打时间戳
+ *  3) support auto detecting and skipping corrupted elements 支持自动检测和跳过损坏的元素
+ *  4) support variable user data size  支持可变的用户数据的大小
+ *  5) use highly optimized gettimeofday() to speedup sys time  使用高度优化的gettimeofday()加速系统时间
  */
 #ifndef __SHM_QUEUE_HEADER__
 #define __SHM_QUEUE_HEADER__
@@ -23,7 +23,7 @@
 #define NULL 0
 #endif
 
-// Switch on this macro for compiling a test program
+// Switch on this macro for compiling a test program 在编写测试程序，宏开关
 #ifndef SQ_FOR_TEST
 #define SQ_FOR_TEST	0
 #endif
@@ -32,17 +32,17 @@ typedef unsigned short u16_t;
 typedef unsigned int u32_t;
 typedef unsigned long long u64_t;
 
-// Maximum bytes allowed for a queue data
-#define MAX_SQ_DATA_LENGTH	65536
+// Maximum bytes allowed for a queue data 队列数据所允许的最大字节数
+#define MAX_SQ_DATA_LENGTH	65536   //2^16
 
 struct sq_head_t;
 
 // Create a shm queue
 // Parameters:
 //     shm_key      - shm key
-//     ele_size     - preallocated size for each element
-//     ele_count    - preallocated number of elements
-// Returns a shm queue pointer or NULL if failed
+//     ele_size     - preallocated size for each element  为每个数据项预分配大小
+//     ele_count    - preallocated number of elements     数据项的个数
+// Returns a shm queue pointer or NULL if failed    
 struct sq_head_t *sq_create(u64_t shm_key, int ele_size, int ele_count);
 
 // Open an existing shm queue for reading data

@@ -3,9 +3,9 @@
  * Implementation of a shm queue
  *
  *  Created on: 2016.7.10
- *      Author: WK <18402927708@163.com>
+ *  Author: WK <18402927708@163.com>
  *
- *  Based on implementation of transaction queue
+ *  Based on implementation of transaction queue 基于事务队列的实现
  */
 #include <stdint.h>
 #include <sys/time.h>
@@ -39,7 +39,7 @@ struct sq_node_head_t
 	u32_t datalen; // length of stored data in this node
 	struct timeval enqueue_time;
 
-	// the actual data are stored here
+	// the actual data are stored here 真实的数据存储在这里
 	unsigned char data[0];
 
 } __attribute__((packed));
@@ -56,7 +56,7 @@ struct sq_head_t
 	int sig_node_num; // send signal to processes when data node excceeds this count
 	int sig_process_num; // send signal to up to this number of processes each time
 
-	volatile int pidnum; // number of processes currently registered for signal delivery
+	volatile int pidnum; // number of processes currently registered for signal delivery 
 	volatile pid_t pidset[MAX_READER_PROC_NUM]; // registered pid list
 	volatile uint8_t sigmask[(MAX_READER_PROC_NUM+7)/8]; // bit map for pid waiting on signal
 
@@ -250,8 +250,9 @@ static char *attach_shm(long iKey, long iSize, int iFlag)
 		perror("shmat");
 		return NULL;
 	}
+
 /*
-	// avoid swapping
+	// avoid swapping  //防止这块内存页被操作系统交换
 	if(mlock(shm, iSize)<0)
 	{
 		perror("mlock");
@@ -262,7 +263,7 @@ static char *attach_shm(long iKey, long iSize, int iFlag)
 	return shm;
 }
 
-// shm operation wrapper
+// shm operation wrapper  //shm操作包装
 static struct sq_head_t *open_shm_queue(long shm_key, long ele_size, long ele_count, int create)
 {
 	long allocate_size;
@@ -270,11 +271,11 @@ static struct sq_head_t *open_shm_queue(long shm_key, long ele_size, long ele_co
 
 	if(create)
 	{
-		ele_size = (((ele_size + 7)>>3) << 3); // align to 8 bytes
+		ele_size = (((ele_size + 7)>>3) << 3); // align to 8 bytes (ele_size+7)&~7;
 		// We need an extra element for ending control
 		allocate_size = sizeof(struct sq_head_t) + SQ_NODE_SIZE_ELEMENT(ele_size)*(ele_count+1);
 		// Align to 4MB boundary
-		allocate_size = (allocate_size + (4UL<<20) - 1) & (~((4UL<<20)-1));
+		allocate_size = (allocate_size + (4UL<<20) - 1) & (~((4UL<<20)-1));  //4M对齐
 		printf("shm size needed for queue - %lu.\n", allocate_size);
 	}
 	else
@@ -293,9 +294,9 @@ static struct sq_head_t *open_shm_queue(long shm_key, long ele_size, long ele_co
 		shm->ele_count = ele_count;
 		return shm;
 	}
-	else if(create) // verify parameters if open for writing
+	else if(create) // verify parameters if open for writing 
 	{
-		if(shm->ele_size!=ele_size || shm->ele_count!=ele_count)
+		if(shm->ele_size!=ele_size || shm->ele_count!=ele_count) 
 		{
 			printf("shm parameters mismatched: \n");
 			printf("    given:  ele_size=%ld, ele_count=%ld\n", ele_size, ele_count);
@@ -324,7 +325,6 @@ struct sq_head_t *sq_create(u64_t shm_key, int ele_size, int ele_count)
 		snprintf(errmsg, sizeof(errmsg), "Bad argument");
 		return NULL;
 	}
-
 	queue = open_shm_queue(shm_key, ele_size, ele_count, 1);
 	if(queue==NULL)
 	{
@@ -371,7 +371,7 @@ int sq_put(struct sq_head_t *queue, void *data, int datalen)
 		return -1;
 	}
 
-	// calculate the number of nodes needed
+	// calculate the number of nodes needed   计算数据需要多少块
 	nr_nodes = SQ_NUM_NEEDED_NODES(queue, datalen);
 
 	if(SQ_EMPTY_NODES(queue)<nr_nodes)
@@ -643,7 +643,8 @@ badarg:
 		printf("  put <msg_count> <msg>\n");
 		printf("  get <concurrent_proc_count> <msg_count>\n");
 		printf("  quit\n");
-		printf("cmd>"); fflush(stdout);
+		printf("cmd>"); 
+		fflush(stdout);
 		if(gets(cmd)==NULL)
 			return 0;
 		if(strncmp(cmd, "put ", 4)==0)
