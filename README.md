@@ -20,6 +20,8 @@
 		// 队列满了。。。
 	}
 读者：
+
+
 	void siguser1(int signo) // dummy signal handler
 	{
 	   (void)signo;
@@ -51,6 +53,8 @@
 	}
 
 
+
+
 TODO:
    为了防止这段内存被操作系统swap掉。并且由于此操作风险高，仅超级用户可以执行。
 系统调用 mlock 家族允许程序在物理内存上锁住它的部分或全部地址空间。
@@ -58,9 +62,11 @@ TODO:
 一个严格时间相关的程序可能会希望锁住物理内存，因为内存页面调出调入的时间延迟可能太长或过于不可预知。
 安全性要求较高的应用程序可能希望防止敏感数据被换出到交换文件中，因为这样在程序结束后，攻击者可能从交换文件中恢复出这些数据。
 
+
 需注意的是，仅分配内存并调用 mlock 并不会为调用进程锁定这些内存，
 因为对应的分页可能是写时复制（copy-on-write）的。
 因此，你应该在每个页面中写入一个假的值：
+
 eg:
 const int alloc_size = 32 * 1024 * 1024;
 char* memory = malloc (alloc_size); 
@@ -68,6 +74,8 @@ mlock (memory, alloc_size);
 size_t i; size_t page_size = getpagesize (); 
 for (i = 0; i < alloc_size; i += page_size) 
 memory[i] = 0;
+
+
  这样针对每个内存分页的写入操作会强制 Linux 为当前进程分配一个独立、私有的内存页。
 
 要解除锁定，可以用同样的参数调用 munlock。
