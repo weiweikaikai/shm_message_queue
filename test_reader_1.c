@@ -7,6 +7,7 @@
 
 #include"shm_queue.h"
 #include<signal.h>
+#include <sys/time.h>
  void siguser1(int signo) // dummy signal handler
  {
 	   (void)signo;
@@ -28,20 +29,20 @@ int main()
 	while(1)
 	{
 		char buffer[1024];
-
-		int len = sq_get(sq, buffer, sizeof(buffer),NULL);
+         struct timeval write_time;
+		int len = sq_get(sq, buffer, sizeof(buffer),&write_time);
 		if(len<0) // 读失败
 		{
 		}
 		else if(len==0) // 没有数据，继续做其它操作，然后等待，这里可以进入select/epoll_wait等待
 		{
 			sq_sigon(sq, sigindex); // 打开signal通知
-			sleep(10);
+			sleep(10);  //可以进入select 或者 epoll_wait 等待
 			sq_sigoff(sq, sigindex); // 关闭signal通知
 		}
 		else // 收到数据了
 		{
-			printf("I am reader: %s\n",buffer);
+			printf("sec %ds,usec%dus I am reader: %s\n",write_time.tv_sec,write_time.tv_usec,buffer);
 		}
 	}
     return 0;

@@ -59,7 +59,13 @@ struct sq_head_t
 	volatile int pidnum; // number of processes currently registered for signal delivery 
 	volatile pid_t pidset[MAX_READER_PROC_NUM]; // registered pid list
 	volatile uint8_t sigmask[(MAX_READER_PROC_NUM+7)/8]; // bit map for pid waiting on signal
-
+	/*
+	 按照posix标准，一般整形对应的*_t类型为：
+     1字节     uint8_t
+     2字节     uint16_t
+     4字节     uint32_t
+     8字节     uint64_t
+	*/
 	struct sq_node_head_t nodes[0];
 };
 
@@ -96,7 +102,7 @@ struct sq_head_t
 // optimized gettimeofday
 #include "opt_time.h"
 
-static inline int is_pid_valid(pid_t pid)
+static inline int is_pid_valid(pid_t pid) //如果有一个进程就会在proc文件夹中建立一个以pid为名称的文件夹
 {
 	if(pid==0) return 0;
 
@@ -214,7 +220,7 @@ int sq_sigon(struct sq_head_t *sq, int sigindex)
 {
 	if((uint32_t)sigindex<(uint32_t)sq->pidnum)
 	{
-		__sync_fetch_and_or(sq->sigmask+(sigindex/8), (uint8_t)1<<(sigindex%8));
+		__sync_fetch_and_or(sq->sigmask+(sigindex/8), (uint8_t)1<<(sigindex%8)); //把指定的位置为1
 		return 0;
 	}
 	snprintf(errmsg, sizeof(errmsg), "sigindex is invalid");
@@ -225,7 +231,7 @@ int sq_sigoff(struct sq_head_t *sq, int sigindex)
 {
 	if((uint32_t)sigindex<(uint32_t)sq->pidnum)
 	{
-		__sync_fetch_and_and(sq->sigmask+(sigindex/8), (uint8_t)~(1U<<(sigindex%8)));
+		__sync_fetch_and_and(sq->sigmask+(sigindex/8), (uint8_t)~(1U<<(sigindex%8)));//把指定的位置为0
 		return 0;
 	}
 	snprintf(errmsg, sizeof(errmsg), "sigindex is invalid");
@@ -233,7 +239,7 @@ int sq_sigoff(struct sq_head_t *sq, int sigindex)
 }
 
 
-// shm operation wrapper
+// shm operation wrapper  
 static char *attach_shm(long iKey, long iSize, int iFlag)
 {
 	int shmid;
@@ -251,7 +257,7 @@ static char *attach_shm(long iKey, long iSize, int iFlag)
 		return NULL;
 	}
 
-/*
+/*TODO:
 	// avoid swapping  //防止这块内存页被操作系统交换
 	if(mlock(shm, iSize)<0)
 	{
@@ -384,7 +390,7 @@ int sq_put(struct sq_head_t *queue, void *data, int datalen)
 	node = SQ_GET(queue, idx);
 	new_tail = SQ_ADD_TAIL(queue, nr_nodes);
 
-	if(new_tail < queue->tail_pos) // wrapped back
+	if(new_tail < queue->tail_pos) // wrapped back  //如果出现反包
 	{
 		// We need a set of continuous nodes
 		// So skip the empty nodes at the end, and begin allocation at index 0
@@ -392,7 +398,7 @@ int sq_put(struct sq_head_t *queue, void *data, int datalen)
 		new_tail = nr_nodes;
 		node = SQ_GET(queue, 0);
 
-		if(queue->head_pos-1 < nr_nodes)
+		if(queue->head_pos-1 < nr_nodes) //head_pos标识的是空闲的包个数 tail_pos 标识的是使用的包个数
 		{
 			snprintf(errmsg, sizeof(errmsg), "Not enough for new data");
 			return -2; // not enough empty nodes
@@ -402,17 +408,17 @@ int sq_put(struct sq_head_t *queue, void *data, int datalen)
 	// initialize the new node
 	node->start_token = START_TOKEN;
 	node->datalen = datalen;
-	opt_gettimeofday(&node->enqueue_time, NULL);
+	opt_gettimeofday(&node->enqueue_time, NULL);  //插入节点时候的时间
 	memcpy(node->data, data, datalen);
 	queue->tail_pos = new_tail;
 
 	// now signal the reader wait on queue
-	if(queue->data_signum && // needs signaling
+	if(queue->data_signum && // needs signaling    信号触发被设置而且 当已经使用的节点数超高了信号要求的节点数
 		SQ_USED_NODES(queue)>=queue->sig_node_num) // element num reached
 	{
 		int i, nr;
 		// signal at most queue->sig_process_num processes
-		for(i=0,nr=0; i<(int)queue->pidnum && nr<queue->sig_process_num; i++)
+		for(i=0,nr=0; i<(int)queue->pidnum && nr<queue->sig_process_num; i++) //分别给不同的进程发信号
 		{
 			if(queue->pidset[i] && queue->sigmask[i/8] & 1<<(i%8))
 			{

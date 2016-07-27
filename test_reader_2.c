@@ -7,6 +7,8 @@
 
 #include"shm_queue.h"
 #include<signal.h>
+#include <sys/time.h>
+
  void siguser1(int signo) // dummy signal handler
  {
 	   (void)signo;
@@ -28,8 +30,8 @@ int main()
 	while(1)
 	{
 		char buffer[1024];
-
-		int len = sq_get(sq, buffer, sizeof(buffer),NULL);
+         struct timeval write_time;
+		int len = sq_get(sq, buffer, sizeof(buffer),&write_time);
 		if(len<0) // 读失败
 		{
 		}
@@ -41,7 +43,7 @@ int main()
 		}
 		else // 收到数据了
 		{
-			printf("I am reader: %s\n",buffer);
+		   printf("sec %ds,usec%dus I am reader: %s\n",write_time.tv_sec,write_time.tv_usec,buffer);
 		}
 	}
     return 0;

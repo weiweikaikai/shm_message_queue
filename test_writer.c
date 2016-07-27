@@ -17,7 +17,7 @@ int main()
 	struct sq_head_t *sq = sq_create(0x1234, element_size, element_count);
 
 	// 如果需要开启signal通知功能，设置一下通知的参数
-	sq_set_sigparam(sq, SIGUSR1, 1, 1);
+	sq_set_sigparam(sq, SIGUSR1, 1, 2);
 
 	// 现在可以开始写数据了
 	char *data = "hello hello I am writer";
